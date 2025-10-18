@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Swap Exchange</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #059669 0%, #1e40af 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .token-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .swap-arrow {
+            transition: transform 0.3s ease;
+        }
+        
+        .swap-arrow:hover {
+            transform: rotate(180deg);
+        }
+        
+        .price-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="min-h-full gradient-bg">
+  <div class="min-h-full py-8 px-4">
+   <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6"><!-- Portfolio Chart - Left Sidebar -->
+     <div class="lg:col-span-1 space-y-6">
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-white">
+       <h2 class="text-xl font-bold mb-4 flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg> Portfolio Chart</h2><!-- Chart Container -->
+       <div class="relative h-64 mb-4" id="chart-container">
+        <canvas id="portfolio-chart" class="w-full h-full"></canvas>
+        <div id="chart-placeholder" class="absolute inset-0 flex items-center justify-center text-emerald-200/50">
+         <div class="text-center">
+          <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <p class="text-sm">Connect wallet to view chart</p>
+         </div>
+        </div>
+       </div><!-- Chart Controls -->
+       <div class="flex justify-center space-x-2 mb-4" id="chart-controls"><button class="chart-period-btn active bg-white/20 hover:bg-white/30 text-white text-xs font-medium py-1 px-3 rounded-lg transition-colors" data-period="1h">1H</button> <button class="chart-period-btn bg-white/10 hover:bg-white/20 text-white text-xs font-medium py-1 px-3 rounded-lg transition-colors" data-period="24h">24H</button> <button class="chart-period-btn bg-white/10 hover:bg-white/20 text-white text-xs font-medium py-1 px-3 rounded-lg transition-colors" data-period="7d">7D</button> <button class="chart-period-btn bg-white/10 hover:bg-white/20 text-white text-xs font-medium py-1 px-3 rounded-lg transition-colors" data-period="30d">30D</button>
+       </div><!-- Chart Stats -->
+       <div class="grid grid-cols-2 gap-4 text-center" id="chart-stats">
+        <div>
+         <div class="text-emerald-200/70 text-xs">
+          24h Change
+         </div>
+         <div class="text-white font-bold text-sm" id="chart-change">
+          --
+         </div>
+        </div>
+        <div>
+         <div class="text-emerald-200/70 text-xs">
+          High/Low
+         </div>
+         <div class="text-white font-bold text-sm" id="chart-range">
+          --
+         </div>
+        </div>
+       </div>
+      </div>
+     </div><!-- Main Swap Interface - Center -->
+     <div class="lg:col-span-2">
+      <div class="max-w-md mx-auto"><!-- Header -->
+       <div class="text-center mb-8">
+        <h1 id="exchange-title" class="text-3xl font-bold text-white mb-2">ZenSwap</h1>
+        <p class="text-emerald-100">Trade tokens instantly with the best rates</p><!-- Wallet Connection -->
+        <div class="mt-6 flex gap-3 justify-center"><button id="wallet-btn" class="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 border border-white/20"> <span id="wallet-text">Connect Wallet</span> </button> <button id="disconnect-btn" class="hidden bg-red-500/20 backdrop-blur-sm hover:bg-red-500/30 text-red-200 font-semibold py-3 px-4 rounded-xl transition-all duration-200 border border-red-400/30">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg></button>
+        </div>
+       </div><!-- Main Swap Card -->
+       <div class="bg-white rounded-2xl p-6 card-shadow mb-6"><!-- From Token Section -->
+        <div class="mb-4">
+         <div class="flex justify-between items-center mb-2"><label class="text-sm font-medium text-gray-600">From</label> <span class="text-sm text-gray-500">Balance: <span id="from-balance">0.00</span></span>
+         </div>
+         <div class="bg-gray-50 rounded-xl p-4">
+          <div class="flex items-center justify-between"><input type="number" id="from-amount" placeholder="0.0" class="bg-transparent text-2xl font-semibold text-gray-800 w-full token-input border-none" step="0.000001"> <button id="from-token-btn" class="flex items-center bg-white rounded-xl px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-6 h-6 rounded-full bg-orange-400 mr-2 flex items-center justify-center"><span class="text-white text-xs font-bold">₿</span>
+            </div><span class="font-semibold text-gray-800" id="from-token">BTC</span>
+            <svg class="w-4 h-4 ml-2 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg></button>
+          </div>
+          <div class="text-sm text-gray-500 mt-2">
+           ≈ $<span id="from-usd">0.00</span>
+          </div>
+         </div>
+        </div><!-- Swap Arrow -->
+        <div class="flex justify-center mb-4"><button id="swap-direction" class="bg-emerald-500 hover:bg-emerald-600 text-white p-3 rounded-full shadow-lg swap-arrow transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg></button>
+        </div><!-- To Token Section -->
+        <div class="mb-6">
+         <div class="flex justify-between items-center mb-2"><label class="text-sm font-medium text-gray-600">To</label> <span class="text-sm text-gray-500">Balance: <span id="to-balance">0.00</span></span>
+         </div>
+         <div class="bg-gray-50 rounded-xl p-4">
+          <div class="flex items-center justify-between"><input type="number" id="to-amount" placeholder="0.0" class="bg-transparent text-2xl font-semibold text-gray-800 w-full token-input border-none" readonly> <button id="to-token-btn" class="flex items-center bg-white rounded-xl px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-6 h-6 rounded-full bg-blue-500 mr-2 flex items-center justify-center"><span class="text-white text-xs font-bold">Ξ</span>
+            </div><span class="font-semibold text-gray-800" id="to-token">ETH</span>
+            <svg class="w-4 h-4 ml-2 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg></button>
+          </div>
+          <div class="text-sm text-gray-500 mt-2">
+           ≈ $<span id="to-usd">0.00</span>
+          </div>
+         </div>
+        </div><!-- Exchange Rate -->
+        <div class="bg-blue-50 rounded-xl p-4 mb-6">
+         <div class="flex justify-between items-center text-sm"><span class="text-gray-600">Exchange Rate</span> <span class="font-semibold text-gray-800 price-animation">1 BTC = <span id="exchange-rate">15.42</span> ETH</span>
+         </div>
+         <div class="flex justify-between items-center text-sm mt-2"><span class="text-gray-600">Network Fee</span> <span class="text-gray-800">~$2.50</span>
+         </div>
+         <div class="flex justify-between items-center text-sm mt-2"><span class="text-gray-600">Slippage Tolerance</span> <span class="text-emerald-600 font-medium">0.5%</span>
+         </div>
+        </div><!-- Swap Button --> <button id="swap-btn" class="w-full bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"> <span id="swap-button-text">Swap Tokens</span> </button>
+       </div><!-- Footer -->
+       <div class="text-center">
+        <p id="footer-text" class="text-emerald-100 text-sm">Powered by Zenchain Protocol</p>
+       </div>
+      </div>
+     </div><!-- Wallet Dashboard - Right Sidebar -->
+     <div class="lg:col-span-1 space-y-6">
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-white">
+       <h2 class="text-xl font-bold mb-4 flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg> Wallet Dashboard</h2><!-- Wallet Connection Panel -->
+       <div class="mb-6" id="wallet-connection-panel">
+        <div class="text-center mb-6">
+         <svg class="w-12 h-12 mx-auto text-emerald-200/50 mb-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+         </svg>
+         <p class="text-emerald-200/70 text-sm mb-4">Connect your wallet to start trading</p>
+        </div><!-- Wallet Options -->
+        <div class="space-y-3"><!-- MetaMask --> <button id="sidebar-connect-metamask" class="w-full flex items-center p-3 hover:bg-white/10 rounded-xl transition-colors border border-white/20 hover:border-white/30">
+          <div class="w-8 h-8 rounded-lg bg-orange-500/20 mr-3 flex items-center justify-center">
+           <svg class="w-5 h-5 text-orange-400" viewbox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /> <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /> <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /> <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+           </svg>
+          </div>
+          <div class="text-left flex-1">
+           <div class="font-medium text-sm">
+            MetaMask
+           </div>
+           <div class="text-xs text-emerald-200/70">
+            Browser extension
+           </div>
+          </div>
+          <svg class="w-4 h-4 text-emerald-200/50" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg></button> <!-- Phantom --> <button id="sidebar-connect-phantom" class="w-full flex items-center p-3 hover:bg-white/10 rounded-xl transition-colors border border-white/20 hover:border-white/30">
+          <div class="w-8 h-8 rounded-lg bg-purple-500/20 mr-3 flex items-center justify-center">
+           <svg class="w-5 h-5 text-purple-400" viewbox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+           </svg>
+          </div>
+          <div class="text-left flex-1">
+           <div class="font-medium text-sm">
+            Phantom
+           </div>
+           <div class="text-xs text-emerald-200/70">
+            Solana &amp; Ethereum
+           </div>
+          </div>
+          <svg class="w-4 h-4 text-emerald-200/50" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg></button> <!-- WalletConnect --> <button id="sidebar-connect-walletconnect" class="w-full flex items-center p-3 hover:bg-white/10 rounded-xl transition-colors border border-white/20 hover:border-white/30">
+          <div class="w-8 h-8 rounded-lg bg-blue-500/20 mr-3 flex items-center justify-center">
+           <svg class="w-5 h-5 text-blue-400" viewbox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+           </svg>
+          </div>
+          <div class="text-left flex-1">
+           <div class="font-medium text-sm">
+            WalletConnect
+           </div>
+           <div class="text-xs text-emerald-200/70">
+            Mobile wallets
+           </div>
+          </div>
+          <svg class="w-4 h-4 text-emerald-200/50" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg></button> <!-- Coinbase Wallet --> <button id="sidebar-connect-coinbase" class="w-full flex items-center p-3 hover:bg-white/10 rounded-xl transition-colors border border-white/20 hover:border-white/30">
+          <div class="w-8 h-8 rounded-lg bg-blue-600/20 mr-3 flex items-center justify-center">
+           <svg class="w-5 h-5 text-blue-400" viewbox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /> <rect x="9" y="9" width="6" height="6" rx="1" fill="white" />
+           </svg>
+          </div>
+          <div class="text-left flex-1">
+           <div class="font-medium text-sm">
+            Coinbase Wallet
+           </div>
+           <div class="text-xs text-emerald-200/70">
+            Self-custody wallet
+           </div>
+          </div>
+          <svg class="w-4 h-4 text-emerald-200/50" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg></button>
+        </div><!-- Connection Benefits -->
+        <div class="mt-6 p-4 bg-white/5 rounded-xl">
+         <h3 class="text-sm font-semibold text-emerald-200 mb-3">Why Connect?</h3>
+         <div class="space-y-2 text-xs text-emerald-200/70">
+          <div class="flex items-center">
+           <svg class="w-3 h-3 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+           </svg> View your portfolio balance
+          </div>
+          <div class="flex items-center">
+           <svg class="w-3 h-3 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+           </svg> Execute real token swaps
+          </div>
+          <div class="flex items-center">
+           <svg class="w-3 h-3 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+           </svg> Track transaction history
+          </div>
+          <div class="flex items-center">
+           <svg class="w-3 h-3 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+           </svg> Access advanced features
+          </div>
+         </div>
+        </div>
+       </div><!-- Portfolio Overview (Hidden until wallet connected) -->
+       <div id="portfolio-section" class="hidden">
+        <div class="mb-6">
+         <h3 class="text-sm font-semibold text-emerald-200 mb-3">Portfolio Value</h3>
+         <div class="text-2xl font-bold text-white mb-1" id="total-value">
+          $0.00
+         </div>
+         <div class="text-sm" id="portfolio-change"><span class="text-emerald-300">+$0.00 (0.00%)</span> <span class="text-emerald-200/70">24h</span>
+         </div>
+        </div><!-- Token Holdings -->
+        <div class="mb-6">
+         <h3 class="text-sm font-semibold text-emerald-200 mb-3">Holdings</h3>
+         <div class="space-y-3" id="token-holdings"><!-- Will be populated by JavaScript -->
+         </div>
+        </div><!-- Recent Transactions -->
+        <div>
+         <h3 class="text-sm font-semibold text-emerald-200 mb-3">Recent Activity</h3>
+         <div class="space-y-2" id="recent-transactions"><!-- Will be populated by JavaScript -->
+         </div>
+        </div>
+       </div><!-- Quick Actions (Hidden until wallet connected) -->
+       <div id="quick-actions" class="hidden mt-6 pt-6 border-t border-white/10">
+        <h3 class="text-sm font-semibold text-emerald-200 mb-3">Quick Actions</h3>
+        <div class="grid grid-cols-2 gap-2"><button class="bg-white/10 hover:bg-white/20 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"> Send </button> <button class="bg-white/10 hover:bg-white/20 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"> Receive </button> <button class="bg-white/10 hover:bg-white/20 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"> Stake </button> <button class="bg-white/10 hover:bg-white/20 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"> History </button>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div><!-- Token Selection Modal -->
+  <div id="token-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+   <div class="bg-white rounded-2xl p-6 m-4 max-w-sm w-full max-h-96 overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+     <h3 class="text-lg font-semibold">Select Token</h3><button id="close-modal" class="text-gray-400 hover:text-gray-600">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg></button>
+    </div>
+    <div class="space-y-2" id="token-list"><!-- Token options will be populated here -->
+    </div>
+   </div>
+  </div><!-- Wallet Selection Modal -->
+  <div id="wallet-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+   <div class="bg-white rounded-2xl p-6 m-4 max-w-sm w-full">
+    <div class="flex justify-between items-center mb-6">
+     <h3 class="text-lg font-semibold">Connect Wallet</h3><button id="close-wallet-modal" class="text-gray-400 hover:text-gray-600">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg></button>
+    </div>
+    <div class="space-y-3"><!-- MetaMask --> <button id="connect-metamask" class="w-full flex items-center p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200">
+      <div class="w-10 h-10 rounded-xl bg-orange-100 mr-4 flex items-center justify-center">
+       <svg class="w-6 h-6 text-orange-600" viewbox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /> <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /> <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /> <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+       </svg>
+      </div>
+      <div class="text-left">
+       <div class="font-semibold">
+        MetaMask
+       </div>
+       <div class="text-sm text-gray-500">
+        Connect using browser wallet
+       </div>
+      </div></button> <!-- Phantom --> <button id="connect-phantom" class="w-full flex items-center p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200">
+      <div class="w-10 h-10 rounded-xl bg-purple-100 mr-4 flex items-center justify-center">
+       <svg class="w-6 h-6 text-purple-600" viewbox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+       </svg>
+      </div>
+      <div class="text-left">
+       <div class="font-semibold">
+        Phantom
+       </div>
+       <div class="text-sm text-gray-500">
+        Solana &amp; Ethereum wallet
+       </div>
+      </div></button> <!-- WalletConnect --> <button id="connect-walletconnect" class="w-full flex items-center p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200">
+      <div class="w-10 h-10 rounded-xl bg-blue-100 mr-4 flex items-center justify-center">
+       <svg class="w-6 h-6 text-blue-600" viewbox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+       </svg>
+      </div>
+      <div class="text-left">
+       <div class="font-semibold">
+        WalletConnect
+       </div>
+       <div class="text-sm text-gray-500">
+        Scan with mobile wallet
+       </div>
+      </div></button>
+    </div>
+   </div>
+  </div>
+  <script>
+        // Configuration object
+        const defaultConfig = {
+            exchange_title: "ZenSwap",
+            swap_button_text: "Swap Tokens",
+            footer_text: "Powered by Zenchain Protocol",
+            primary_color: "#10b981",
+            secondary_color: "#3b82f6",
+            background_color: "#059669"
+        };
+
+        // Available tokens with current market prices (October 18, 2024)
+        const tokens = {
+            'BTC': { name: 'Bitcoin', symbol: 'BTC', price: 67850, icon: '₿', color: 'bg-orange-400', change24h: 1.8 },
+            'ETH': { name: 'Ethereum', symbol: 'ETH', price: 2650, icon: 'Ξ', color: 'bg-blue-500', change24h: 2.3 },
+            'SOL': { name: 'Solana', symbol: 'SOL', price: 148, icon: 'S', color: 'bg-purple-500', change24h: 4.1 },
+            'SUI': { name: 'Sui', symbol: 'SUI', price: 2.15, icon: '🌊', color: 'bg-cyan-500', change24h: 6.7 },
+            'ZCX': { name: 'Unizen', symbol: 'ZCX', price: 0.067, icon: 'U', color: 'bg-emerald-500', change24h: -2.4 },
+            'BNB': { name: 'BNB', symbol: 'BNB', price: 595, icon: 'B', color: 'bg-yellow-400', change24h: 0.9 },
+            'ADA': { name: 'Cardano', symbol: 'ADA', price: 0.365, icon: 'A', color: 'bg-blue-600', change24h: 1.2 },
+            'DOT': { name: 'Polkadot', symbol: 'DOT', price: 4.28, icon: '●', color: 'bg-pink-500', change24h: -1.5 }
+        };
+
+        let currentFromToken = 'BTC';
+        let currentToToken = 'ETH';
+        let isSelectingFrom = true;
+        let connectedWallet = null;
+        let walletAddress = null;
+        
+        // Mock portfolio data
+        let portfolioData = {
+            totalValue: 0,
+            change24h: 0,
+            holdings: [],
+            transactions: []
+        };
+
+        // DOM elements
+        const fromAmountInput = document.getElementById('from-amount');
+        const toAmountInput = document.getElementById('to-amount');
+        const fromTokenBtn = document.getElementById('from-token-btn');
+        const toTokenBtn = document.getElementById('to-token-btn');
+        const swapDirectionBtn = document.getElementById('swap-direction');
+        const swapBtn = document.getElementById('swap-btn');
+        const tokenModal = document.getElementById('token-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const tokenList = document.getElementById('token-list');
+        const walletBtn = document.getElementById('wallet-btn');
+        const walletText = document.getElementById('wallet-text');
+        const walletModal = document.getElementById('wallet-modal');
+        const closeWalletModalBtn = document.getElementById('close-wallet-modal');
+        const connectMetaMaskBtn = document.getElementById('connect-metamask');
+        const connectPhantomBtn = document.getElementById('connect-phantom');
+        const connectWalletConnectBtn = document.getElementById('connect-walletconnect');
+
+        // Chart variables
+        let portfolioChart = null;
+        let chartData = [];
+        let currentChartPeriod = '1h';
+        
+        // Transaction history variables
+        let allTransactions = [];
+        let displayedTransactions = [];
+        let currentFilter = 'all';
+        let transactionsPerPage = 10;
+
+        // Initialize the app
+        function init() {
+            populateTokenList();
+            initializeChart();
+            updateDisplay();
+            checkExistingWalletConnection();
+            updateWalletDisplay();
+            attachEventListeners();
+            
+            // Simulate price updates
+            setInterval(updatePrices, 5000);
+            setInterval(updateChartData, 30000); // Update chart every 30 seconds
+        }
+        
+        // Check if wallet is already connected
+        async function checkExistingWalletConnection() {
+            try {
+                if (typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask) {
+                    // Check if already connected
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts && accounts.length > 0) {
+                        connectedWallet = 'MetaMask';
+                        walletAddress = accounts[0];
+                        console.log('Existing MetaMask connection found:', walletAddress);
+                        
+                        // Get wallet balance for existing connection
+                        try {
+                            const balance = await window.ethereum.request({
+                                method: 'eth_getBalance',
+                                params: [walletAddress, 'latest']
+                            });
+                            const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
+                            console.log('Existing wallet ETH Balance:', ethBalance);
+                            updatePortfolioWithRealData(ethBalance);
+                        } catch (balanceError) {
+                            console.log('Could not fetch existing wallet balance, using mock data:', balanceError);
+                            generateMockPortfolio();
+                        }
+                        
+                        // Set up event listeners for existing connection
+                        window.ethereum.on('accountsChanged', (accounts) => {
+                            if (accounts.length === 0) {
+                                disconnectWallet();
+                            } else {
+                                walletAddress = accounts[0];
+                                updateWalletDisplay();
+                                // Refresh wallet data when account changes
+                                setTimeout(() => {
+                                    checkExistingWalletConnection();
+                                }, 1000);
+                            }
+                        });
+                        
+                        window.ethereum.on('chainChanged', (chainId) => {
+                            window.location.reload();
+                        });
+                    }
+                }
+            } catch (error) {
+                console.log('No existing wallet connection found:', error);
+                // Use mock data if no wallet connection
+                generateMockPortfolio();
+            }
+        }
+        
+        function initializeChart() {
+            const canvas = document.getElementById('portfolio-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            // Generate initial mock data
+            generateChartData();
+        }
+        
+        function generateChartData() {
+            const periods = {
+                '1h': { points: 60, interval: 1 }, // 60 points, 1 minute each
+                '24h': { points: 24, interval: 60 }, // 24 points, 1 hour each
+                '7d': { points: 7, interval: 1440 }, // 7 points, 1 day each
+                '30d': { points: 30, interval: 1440 } // 30 points, 1 day each
+            };
+            
+            const period = periods[currentChartPeriod];
+            const baseValue = 60000; // Starting portfolio value
+            const data = [];
+            
+            let currentValue = baseValue;
+            const now = Date.now();
+            
+            for (let i = period.points - 1; i >= 0; i--) {
+                const timestamp = now - (i * period.interval * 60000);
+                
+                // Add some realistic volatility
+                const volatility = currentChartPeriod === '1h' ? 0.002 : 
+                                 currentChartPeriod === '24h' ? 0.01 : 0.03;
+                const change = (Math.random() - 0.5) * volatility;
+                currentValue *= (1 + change);
+                
+                data.push({
+                    timestamp,
+                    value: Math.max(currentValue, baseValue * 0.8) // Don't go below 80% of base
+                });
+            }
+            
+            chartData = data;
+            if (connectedWallet) {
+                drawChart();
+                updateChartStats();
+            }
+        }
+        
+        function drawChart() {
+            const canvas = document.getElementById('portfolio-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (chartData.length === 0) return;
+            
+            const padding = 20;
+            const chartWidth = canvas.width - (padding * 2);
+            const chartHeight = canvas.height - (padding * 2);
+            
+            // Find min/max values
+            const values = chartData.map(d => d.value);
+            const minValue = Math.min(...values);
+            const maxValue = Math.max(...values);
+            const valueRange = maxValue - minValue;
+            
+            // Create gradient
+            const gradient = ctx.createLinearGradient(0, padding, 0, canvas.height - padding);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+            
+            // Draw area under curve
+            ctx.beginPath();
+            ctx.moveTo(padding, canvas.height - padding);
+            
+            chartData.forEach((point, index) => {
+                const x = padding + (index / (chartData.length - 1)) * chartWidth;
+                const y = padding + ((maxValue - point.value) / valueRange) * chartHeight;
+                
+                if (index === 0) {
+                    ctx.lineTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Draw line
+            ctx.beginPath();
+            chartData.forEach((point, index) => {
+                const x = padding + (index / (chartData.length - 1)) * chartWidth;
+                const y = padding + ((maxValue - point.value) / valueRange) * chartHeight;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw points
+            chartData.forEach((point, index) => {
+                const x = padding + (index / (chartData.length - 1)) * chartWidth;
+                const y = padding + ((maxValue - point.value) / valueRange) * chartHeight;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                ctx.fillStyle = '#10b981';
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+        }
+        
+        function updateChartStats() {
+            if (chartData.length < 2) return;
+            
+            const firstValue = chartData[0].value;
+            const lastValue = chartData[chartData.length - 1].value;
+            const change = lastValue - firstValue;
+            const changePercent = (change / firstValue * 100).toFixed(2);
+            
+            const values = chartData.map(d => d.value);
+            const minValue = Math.min(...values);
+            const maxValue = Math.max(...values);
+            
+            const changeElement = document.getElementById('chart-change');
+            const isPositive = change >= 0;
+            changeElement.textContent = `${isPositive ? '+' : ''}$${Math.abs(change).toFixed(0)} (${isPositive ? '+' : ''}${changePercent}%)`;
+            changeElement.className = `text-white font-bold text-sm ${isPositive ? 'text-emerald-300' : 'text-red-300'}`;
+            
+            document.getElementById('chart-range').textContent = `$${maxValue.toFixed(0)} / $${minValue.toFixed(0)}`;
+        }
+        
+        function updateChartData() {
+            if (!connectedWallet || chartData.length === 0) return;
+            
+            // Add new data point
+            const lastValue = chartData[chartData.length - 1].value;
+            const volatility = currentChartPeriod === '1h' ? 0.002 : 
+                             currentChartPeriod === '24h' ? 0.01 : 0.03;
+            const change = (Math.random() - 0.5) * volatility;
+            const newValue = lastValue * (1 + change);
+            
+            chartData.push({
+                timestamp: Date.now(),
+                value: newValue
+            });
+            
+            // Remove old data points to maintain fixed length
+            const maxPoints = currentChartPeriod === '1h' ? 60 : 
+                             currentChartPeriod === '24h' ? 24 : 
+                             currentChartPeriod === '7d' ? 7 : 30;
+            
+            if (chartData.length > maxPoints) {
+                chartData.shift();
+            }
+            
+            drawChart();
+            updateChartStats();
+        }
+
+        function populateTokenList() {
+            tokenList.innerHTML = '';
+            Object.entries(tokens).forEach(([symbol, token]) => {
+                const tokenItem = document.createElement('div');
+                tokenItem.className = 'flex items-center p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors';
+                tokenItem.innerHTML = `
+                    <div class="w-8 h-8 rounded-full ${token.color} mr-3 flex items-center justify-center">
+                        <span class="text-white font-bold">${token.icon}</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold">${token.symbol}</div>
+                        <div class="text-sm text-gray-500">${token.name}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold">$${token.price.toLocaleString()}</div>
+                    </div>
+                `;
+                tokenItem.addEventListener('click', () => selectToken(symbol));
+                tokenList.appendChild(tokenItem);
+            });
+        }
+
+        function selectToken(symbol) {
+            if (isSelectingFrom) {
+                if (symbol !== currentToToken) {
+                    currentFromToken = symbol;
+                }
+            } else {
+                if (symbol !== currentFromToken) {
+                    currentToToken = symbol;
+                }
+            }
+            updateDisplay();
+            closeModal();
+        }
+
+        function updateDisplay() {
+            // Update token buttons
+            const fromToken = tokens[currentFromToken];
+            const toToken = tokens[currentToToken];
+            
+            document.getElementById('from-token').textContent = fromToken.symbol;
+            document.getElementById('to-token').textContent = toToken.symbol;
+            
+            // Update token icons
+            fromTokenBtn.querySelector('.rounded-full').className = `w-6 h-6 rounded-full ${fromToken.color} mr-2 flex items-center justify-center`;
+            fromTokenBtn.querySelector('.rounded-full span').textContent = fromToken.icon;
+            
+            toTokenBtn.querySelector('.rounded-full').className = `w-6 h-6 rounded-full ${toToken.color} mr-2 flex items-center justify-center`;
+            toTokenBtn.querySelector('.rounded-full span').textContent = toToken.icon;
+            
+            // Update exchange rate
+            const rate = (fromToken.price / toToken.price).toFixed(6);
+            document.getElementById('exchange-rate').textContent = rate;
+            document.querySelector('.price-animation').innerHTML = `1 ${fromToken.symbol} = <span id="exchange-rate">${rate}</span> ${toToken.symbol}`;
+            
+            // Update balances (mock data)
+            document.getElementById('from-balance').textContent = (Math.random() * 10).toFixed(4);
+            document.getElementById('to-balance').textContent = (Math.random() * 100).toFixed(4);
+            
+            calculateSwap();
+        }
+
+        function calculateSwap() {
+            const fromAmount = parseFloat(fromAmountInput.value) || 0;
+            const fromToken = tokens[currentFromToken];
+            const toToken = tokens[currentToToken];
+            
+            if (fromAmount > 0) {
+                const toAmount = (fromAmount * fromToken.price / toToken.price);
+                toAmountInput.value = toAmount.toFixed(6);
+                
+                // Update USD values
+                document.getElementById('from-usd').textContent = (fromAmount * fromToken.price).toLocaleString();
+                document.getElementById('to-usd').textContent = (toAmount * toToken.price).toLocaleString();
+            } else {
+                toAmountInput.value = '';
+                document.getElementById('from-usd').textContent = '0.00';
+                document.getElementById('to-usd').textContent = '0.00';
+            }
+        }
+
+        function swapTokens() {
+            const temp = currentFromToken;
+            currentFromToken = currentToToken;
+            currentToToken = temp;
+            
+            // Swap amounts
+            const tempAmount = fromAmountInput.value;
+            fromAmountInput.value = toAmountInput.value;
+            toAmountInput.value = tempAmount;
+            
+            updateDisplay();
+        }
+
+        function executeSwap() {
+            const fromAmount = parseFloat(fromAmountInput.value);
+            if (!fromAmount || fromAmount <= 0) {
+                showNotification('Please enter a valid amount', 'error');
+                return;
+            }
+            
+            // Simulate swap execution
+            swapBtn.disabled = true;
+            swapBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+            `;
+            
+            setTimeout(() => {
+                swapBtn.disabled = false;
+                swapBtn.innerHTML = `<span id="swap-button-text">${window.elementSdk?.config?.swap_button_text || defaultConfig.swap_button_text}</span>`;
+                showNotification(`Successfully swapped ${fromAmount} ${currentFromToken} for ${toAmountInput.value} ${currentToToken}!`, 'success');
+                
+                // Reset form
+                fromAmountInput.value = '';
+                toAmountInput.value = '';
+                calculateSwap();
+            }, 2000);
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function updatePrices() {
+            // Simulate price fluctuations
+            Object.keys(tokens).forEach(symbol => {
+                const change = (Math.random() - 0.5) * 0.02; // ±1% change
+                const changePercent = (Math.random() - 0.5) * 0.4; // ±0.2% change for 24h
+                
+                tokens[symbol].price *= (1 + change);
+                tokens[symbol].change24h += changePercent;
+                
+                // Keep change24h within reasonable bounds
+                tokens[symbol].change24h = Math.max(-15, Math.min(15, tokens[symbol].change24h));
+            });
+            updateDisplay();
+        }
+
+        // Wallet connection functions
+        async function connectMetaMask() {
+            try {
+                // Check if MetaMask is installed
+                if (typeof window.ethereum === 'undefined') {
+                    showNotification('MetaMask not detected. Please install MetaMask extension.', 'error');
+                    return;
+                }
+
+                // Check if it's actually MetaMask (not another wallet)
+                if (!window.ethereum.isMetaMask) {
+                    showNotification('Please use MetaMask as your default wallet.', 'error');
+                    return;
+                }
+
+                console.log('Attempting to connect to MetaMask...');
+                
+                // Request account access
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                
+                console.log('Accounts received:', accounts);
+                
+                if (accounts && accounts.length > 0) {
+                    connectedWallet = 'MetaMask';
+                    walletAddress = accounts[0];
+                    
+                    // Get network info
+                    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                    console.log('Connected to chain:', chainId);
+                    
+                    // Get wallet balance
+                    try {
+                        const balance = await window.ethereum.request({
+                            method: 'eth_getBalance',
+                            params: [walletAddress, 'latest']
+                        });
+                        const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
+                        console.log('ETH Balance:', ethBalance);
+                        
+                        // Update portfolio with real balance
+                        updatePortfolioWithRealData(ethBalance);
+                    } catch (balanceError) {
+                        console.log('Could not fetch balance, using mock data:', balanceError);
+                        generateMockPortfolio();
+                    }
+                    
+                    updateWalletDisplay();
+                    closeWalletModal();
+                    showNotification('MetaMask connected successfully!', 'success');
+                    
+                    // Listen for account changes
+                    if (window.ethereum.removeAllListeners) {
+                        window.ethereum.removeAllListeners('accountsChanged');
+                        window.ethereum.removeAllListeners('chainChanged');
+                    }
+                    
+                    window.ethereum.on('accountsChanged', (accounts) => {
+                        console.log('Account changed:', accounts);
+                        if (accounts.length === 0) {
+                            disconnectWallet();
+                        } else {
+                            walletAddress = accounts[0];
+                            updateWalletDisplay();
+                            // Refresh wallet data
+                            setTimeout(() => {
+                                connectMetaMask();
+                            }, 1000);
+                        }
+                    });
+                    
+                    window.ethereum.on('chainChanged', (chainId) => {
+                        console.log('Chain changed:', chainId);
+                        // Reload the page when chain changes
+                        window.location.reload();
+                    });
+                    
+                } else {
+                    showNotification('No accounts found. Please unlock MetaMask.', 'error');
+                }
+            } catch (error) {
+                console.error('MetaMask connection error:', error);
+                
+                if (error.code === 4001) {
+                    showNotification('Connection rejected by user.', 'error');
+                } else if (error.code === -32002) {
+                    showNotification('Connection request already pending. Please check MetaMask.', 'error');
+                } else {
+                    showNotification('Failed to connect MetaMask: ' + error.message, 'error');
+                    // Fallback to mock data if connection fails
+                    generateMockPortfolio();
+                }
+            }
+        }
+
+        async function connectPhantom() {
+            try {
+                if (typeof window.solana !== 'undefined' && window.solana.isPhantom) {
+                    const response = await window.solana.connect();
+                    connectedWallet = 'Phantom';
+                    walletAddress = response.publicKey.toString();
+                    updateWalletDisplay();
+                    closeWalletModal();
+                    showNotification('Phantom wallet connected successfully!', 'success');
+                    
+                    // Listen for disconnect
+                    window.solana.on('disconnect', () => {
+                        disconnectWallet();
+                    });
+                } else {
+                    showNotification('Phantom wallet not detected. Please install Phantom extension.', 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to connect Phantom: ' + error.message, 'error');
+            }
+        }
+
+        async function connectWalletConnect() {
+            // Simulate WalletConnect connection (would require actual WalletConnect library)
+            showNotification('WalletConnect integration coming soon!', 'error');
+        }
+
+        async function connectCoinbaseWallet() {
+            try {
+                if (typeof window.ethereum !== 'undefined' && window.ethereum.isCoinbaseWallet) {
+                    const accounts = await window.ethereum.request({ 
+                        method: 'eth_requestAccounts' 
+                    });
+                    
+                    if (accounts && accounts.length > 0) {
+                        connectedWallet = 'Coinbase Wallet';
+                        walletAddress = accounts[0];
+                        updateWalletDisplay();
+                        showNotification('Coinbase Wallet connected successfully!', 'success');
+                        
+                        // Listen for account changes
+                        window.ethereum.on('accountsChanged', (accounts) => {
+                            if (accounts.length === 0) {
+                                disconnectWallet();
+                            } else {
+                                walletAddress = accounts[0];
+                                updateWalletDisplay();
+                            }
+                        });
+                    }
+                } else {
+                    showNotification('Coinbase Wallet not detected. Please install Coinbase Wallet extension.', 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to connect Coinbase Wallet: ' + error.message, 'error');
+            }
+        }
+
+        function showDisconnectConfirmation() {
+            const confirmDisconnect = document.createElement('div');
+            confirmDisconnect.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50';
+            confirmDisconnect.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 m-4 max-w-sm w-full">
+                    <div class="text-center mb-4">
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Disconnect Wallet?</h3>
+                    </div>
+                    <p class="text-gray-600 text-center mb-6">Are you sure you want to disconnect your ${connectedWallet} wallet?</p>
+                    <div class="flex gap-3">
+                        <button id="cancel-disconnect" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button id="confirm-disconnect" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            Disconnect
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(confirmDisconnect);
+            
+            document.getElementById('cancel-disconnect').onclick = () => confirmDisconnect.remove();
+            document.getElementById('confirm-disconnect').onclick = () => {
+                disconnectWallet();
+                confirmDisconnect.remove();
+            };
+            confirmDisconnect.onclick = (e) => {
+                if (e.target === confirmDisconnect) confirmDisconnect.remove();
+            };
+        }
+
+        function disconnectWallet() {
+            connectedWallet = null;
+            walletAddress = null;
+            portfolioData = { totalValue: 0, change24h: 0, holdings: [], transactions: [] };
+            updateWalletDisplay();
+            showNotification('Wallet disconnected successfully', 'success');
+        }
+
+        function updateWalletDisplay() {
+            const disconnectBtn = document.getElementById('disconnect-btn');
+            
+            if (connectedWallet && walletAddress) {
+                const shortAddress = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
+                walletText.textContent = `${connectedWallet}: ${shortAddress}`;
+                walletBtn.classList.add('bg-emerald-500/20', 'border-emerald-400');
+                walletBtn.classList.remove('bg-white/10', 'border-white/20');
+                
+                // Show disconnect button
+                disconnectBtn.classList.remove('hidden');
+                
+                // Hide wallet connection panel, show wallet dashboard and chart
+                document.getElementById('wallet-connection-panel').classList.add('hidden');
+                updateWalletDashboard();
+                showChart();
+                
+                // Remove click handler from wallet button when connected
+                walletBtn.onclick = null;
+                walletBtn.style.cursor = 'default';
+            } else {
+                walletText.textContent = 'Connect Wallet';
+                walletBtn.classList.remove('bg-emerald-500/20', 'border-emerald-400');
+                walletBtn.classList.add('bg-white/10', 'border-white/20');
+                walletBtn.onclick = openWalletModal;
+                walletBtn.style.cursor = 'pointer';
+                
+                // Hide disconnect button
+                disconnectBtn.classList.add('hidden');
+                
+                // Show wallet connection panel, hide wallet dashboard and chart
+                document.getElementById('wallet-connection-panel').classList.remove('hidden');
+                document.getElementById('portfolio-section').classList.add('hidden');
+                document.getElementById('quick-actions').classList.add('hidden');
+                hideChart();
+            }
+        }
+        
+        function showChart() {
+            document.getElementById('chart-placeholder').classList.add('hidden');
+            document.getElementById('portfolio-chart').classList.remove('hidden');
+            document.getElementById('chart-controls').classList.remove('hidden');
+            document.getElementById('chart-stats').classList.remove('hidden');
+            
+            // Redraw chart with current data
+            setTimeout(() => {
+                const canvas = document.getElementById('portfolio-chart');
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                drawChart();
+                updateChartStats();
+            }, 100);
+        }
+        
+        function hideChart() {
+            document.getElementById('chart-placeholder').classList.remove('hidden');
+            document.getElementById('portfolio-chart').classList.add('hidden');
+            document.getElementById('chart-controls').classList.add('hidden');
+            document.getElementById('chart-stats').classList.add('hidden');
+        }
+        
+        function switchChartPeriod(period) {
+            currentChartPeriod = period;
+            
+            // Update active button
+            document.querySelectorAll('.chart-period-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-white/20');
+                btn.classList.add('bg-white/10');
+            });
+            
+            const activeBtn = document.querySelector(`[data-period="${period}"]`);
+            activeBtn.classList.add('active', 'bg-white/20');
+            activeBtn.classList.remove('bg-white/10');
+            
+            // Regenerate chart data for new period
+            generateChartData();
+            if (connectedWallet) {
+                drawChart();
+                updateChartStats();
+            }
+        }
+        
+        function updatePortfolioWithRealData(ethBalance) {
+            // Create portfolio with real ETH balance and mock other tokens
+            const ethValue = ethBalance * tokens.ETH.price;
+            
+            const holdings = [
+                { symbol: 'ETH', amount: ethBalance.toFixed(4), value: ethValue, change: tokens.ETH.change24h },
+                { symbol: 'BTC', amount: (ethBalance * 0.1).toFixed(6), value: ethValue * 0.8, change: tokens.BTC.change24h },
+                { symbol: 'SOL', amount: (ethBalance * 50).toFixed(2), value: ethValue * 0.3, change: tokens.SOL.change24h },
+                { symbol: 'SUI', amount: (ethBalance * 200).toFixed(2), value: ethValue * 0.2, change: tokens.SUI.change24h }
+            ];
+            
+            const transactions = [
+                { type: 'receive', token: 'ETH', amount: `+${ethBalance.toFixed(4)} ETH`, time: 'Connected now' },
+                { type: 'swap', from: 'BTC', to: 'ETH', amount: '0.01 BTC', time: '2 hours ago' },
+                { type: 'send', token: 'SOL', amount: '-10 SOL', time: '1 day ago' }
+            ];
+            
+            const totalValue = holdings.reduce((sum, holding) => sum + holding.value, 0);
+            const totalChange = holdings.reduce((sum, holding) => sum + (holding.value * holding.change / 100), 0);
+            
+            portfolioData = {
+                totalValue,
+                change24h: totalChange,
+                holdings,
+                transactions
+            };
+            
+            // Update token balances in swap interface
+            document.getElementById('from-balance').textContent = ethBalance.toFixed(4);
+            document.getElementById('to-balance').textContent = (ethBalance * 0.1).toFixed(6);
+            
+            // Generate comprehensive transaction history
+            generateTransactionHistory();
+        }
+
+        function generateMockPortfolio() {
+            // Generate mock portfolio data
+            const holdings = [
+                { symbol: 'BTC', amount: 0.5432, value: 23500, change: 2.4 },
+                { symbol: 'ETH', amount: 8.2156, value: 23000, change: -1.2 },
+                { symbol: 'SOL', amount: 125.67, value: 12370, change: 8.7 },
+                { symbol: 'ADA', amount: 2500, value: 1200, change: 5.3 }
+            ];
+            
+            const transactions = [
+                { type: 'swap', from: 'BTC', to: 'ETH', amount: '0.1 BTC', time: '2 min ago' },
+                { type: 'receive', token: 'SOL', amount: '+25 SOL', time: '1 hour ago' },
+                { type: 'send', token: 'ADA', amount: '-500 ADA', time: '3 hours ago' }
+            ];
+            
+            const totalValue = holdings.reduce((sum, holding) => sum + holding.value, 0);
+            const totalChange = holdings.reduce((sum, holding) => sum + (holding.value * holding.change / 100), 0);
+            
+            portfolioData = {
+                totalValue,
+                change24h: totalChange,
+                holdings,
+                transactions
+            };
+            
+            // Generate comprehensive transaction history
+            generateTransactionHistory();
+        }
+        
+        function generateTransactionHistory() {
+            const transactionTypes = ['swap', 'send', 'receive', 'stake', 'unstake'];
+            const tokenSymbols = Object.keys(tokens);
+            const timeUnits = ['min', 'hour', 'day', 'week'];
+            
+            allTransactions = [];
+            
+            // Generate 50 mock transactions
+            for (let i = 0; i < 50; i++) {
+                const type = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
+                const token1 = tokenSymbols[Math.floor(Math.random() * tokenSymbols.length)];
+                const token2 = tokenSymbols[Math.floor(Math.random() * tokenSymbols.length)];
+                const amount = (Math.random() * 100).toFixed(4);
+                const timeValue = Math.floor(Math.random() * 30) + 1;
+                const timeUnit = timeUnits[Math.floor(Math.random() * timeUnits.length)];
+                const hash = '0x' + Math.random().toString(16).substr(2, 8);
+                const status = Math.random() > 0.1 ? 'completed' : 'pending';
+                const fee = (Math.random() * 5).toFixed(2);
+                
+                let transaction = {
+                    id: i + 1,
+                    type,
+                    hash,
+                    status,
+                    fee: `$${fee}`,
+                    time: `${timeValue} ${timeUnit}${timeValue > 1 ? 's' : ''} ago`,
+                    timestamp: Date.now() - (timeValue * getTimeMultiplier(timeUnit))
+                };
+                
+                switch (type) {
+                    case 'swap':
+                        transaction.from = token1;
+                        transaction.to = token2 !== token1 ? token2 : tokenSymbols.find(t => t !== token1);
+                        transaction.amount = `${amount} ${token1}`;
+                        transaction.received = `${(parseFloat(amount) * tokens[token1].price / tokens[transaction.to].price).toFixed(4)} ${transaction.to}`;
+                        break;
+                    case 'send':
+                        transaction.token = token1;
+                        transaction.amount = `-${amount} ${token1}`;
+                        transaction.to_address = '0x' + Math.random().toString(16).substr(2, 8) + '...';
+                        break;
+                    case 'receive':
+                        transaction.token = token1;
+                        transaction.amount = `+${amount} ${token1}`;
+                        transaction.from_address = '0x' + Math.random().toString(16).substr(2, 8) + '...';
+                        break;
+                    case 'stake':
+                        transaction.token = token1;
+                        transaction.amount = `${amount} ${token1}`;
+                        transaction.apy = `${(Math.random() * 15 + 5).toFixed(1)}%`;
+                        break;
+                    case 'unstake':
+                        transaction.token = token1;
+                        transaction.amount = `${amount} ${token1}`;
+                        transaction.rewards = `+${(parseFloat(amount) * 0.1).toFixed(4)} ${token1}`;
+                        break;
+                }
+                
+                allTransactions.push(transaction);
+            }
+            
+            // Sort by timestamp (newest first)
+            allTransactions.sort((a, b) => b.timestamp - a.timestamp);
+        }
+        
+        function getTimeMultiplier(unit) {
+            switch (unit) {
+                case 'min': return 60000;
+                case 'hour': return 3600000;
+                case 'day': return 86400000;
+                case 'week': return 604800000;
+                default: return 3600000;
+            }
+        }
+        
+        function showTransactionHistory() {
+            document.getElementById('wallet-dashboard').classList.add('hidden');
+            document.getElementById('transaction-history-panel').classList.remove('hidden');
+            displayedTransactions = [];
+            loadMoreTransactions();
+        }
+        
+        function hideTransactionHistory() {
+            document.getElementById('wallet-dashboard').classList.remove('hidden');
+            document.getElementById('transaction-history-panel').classList.add('hidden');
+        }
+        
+        function filterTransactions(filter) {
+            currentFilter = filter;
+            displayedTransactions = [];
+            
+            // Update filter buttons
+            document.querySelectorAll('.history-filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-white/20');
+                btn.classList.add('bg-white/10');
+            });
+            
+            const activeBtn = document.querySelector(`[data-filter="${filter}"]`);
+            activeBtn.classList.add('active', 'bg-white/20');
+            activeBtn.classList.remove('bg-white/10');
+            
+            loadMoreTransactions();
+        }
+        
+        function loadMoreTransactions() {
+            const filteredTransactions = currentFilter === 'all' 
+                ? allTransactions 
+                : allTransactions.filter(tx => tx.type === currentFilter);
+            
+            const startIndex = displayedTransactions.length;
+            const endIndex = Math.min(startIndex + transactionsPerPage, filteredTransactions.length);
+            const newTransactions = filteredTransactions.slice(startIndex, endIndex);
+            
+            displayedTransactions.push(...newTransactions);
+            renderTransactionHistory();
+            
+            // Hide load more button if all transactions are loaded
+            const loadMoreBtn = document.getElementById('load-more-transactions');
+            if (displayedTransactions.length >= filteredTransactions.length) {
+                loadMoreBtn.style.display = 'none';
+            } else {
+                loadMoreBtn.style.display = 'block';
+            }
+        }
+        
+        function renderTransactionHistory() {
+            const container = document.getElementById('full-transaction-list');
+            
+            if (displayedTransactions.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-emerald-200/50">
+                        <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <p>No transactions found</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = displayedTransactions.map(tx => {
+                const token = tokens[tx.token || tx.from];
+                let icon, title, subtitle, statusColor;
+                
+                switch (tx.type) {
+                    case 'swap':
+                        icon = '🔄';
+                        title = `Swap ${tx.from} → ${tx.to}`;
+                        subtitle = `${tx.amount} → ${tx.received}`;
+                        break;
+                    case 'send':
+                        icon = '📤';
+                        title = `Send ${tx.token}`;
+                        subtitle = `${tx.amount} to ${tx.to_address}`;
+                        break;
+                    case 'receive':
+                        icon = '📥';
+                        title = `Receive ${tx.token}`;
+                        subtitle = `${tx.amount} from ${tx.from_address}`;
+                        break;
+                    case 'stake':
+                        icon = '🔒';
+                        title = `Stake ${tx.token}`;
+                        subtitle = `${tx.amount} at ${tx.apy} APY`;
+                        break;
+                    case 'unstake':
+                        icon = '🔓';
+                        title = `Unstake ${tx.token}`;
+                        subtitle = `${tx.amount} + ${tx.rewards} rewards`;
+                        break;
+                }
+                
+                statusColor = tx.status === 'completed' ? 'text-emerald-300' : 'text-yellow-300';
+                
+                return `
+                    <div class="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center">
+                                <span class="text-lg mr-3">${icon}</span>
+                                <div>
+                                    <div class="text-white text-sm font-medium">${title}</div>
+                                    <div class="text-emerald-200/70 text-xs">${subtitle}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="${statusColor} text-xs font-medium capitalize">${tx.status}</div>
+                                <div class="text-emerald-200/70 text-xs">${tx.time}</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="text-emerald-200/50">
+                                Hash: ${tx.hash}...
+                            </div>
+                            <div class="text-emerald-200/70">
+                                Fee: ${tx.fee}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateWalletDashboard() {
+            if (!connectedWallet) return;
+            
+            // Generate mock data if not exists
+            if (portfolioData.holdings.length === 0) {
+                generateMockPortfolio();
+            }
+            
+            // Hide wallet status, show portfolio
+            document.getElementById('wallet-status').classList.add('hidden');
+            document.getElementById('portfolio-section').classList.remove('hidden');
+            document.getElementById('quick-actions').classList.remove('hidden');
+            
+            // Update portfolio value
+            document.getElementById('total-value').textContent = `$${portfolioData.totalValue.toLocaleString()}`;
+            
+            const changeElement = document.getElementById('portfolio-change');
+            const changePercent = (portfolioData.change24h / portfolioData.totalValue * 100).toFixed(2);
+            const isPositive = portfolioData.change24h >= 0;
+            changeElement.innerHTML = `
+                <span class="${isPositive ? 'text-emerald-300' : 'text-red-300'}">
+                    ${isPositive ? '+' : ''}$${Math.abs(portfolioData.change24h).toFixed(2)} (${isPositive ? '+' : ''}${changePercent}%)
+                </span>
+                <span class="text-emerald-200/70">24h</span>
+            `;
+            
+            // Update holdings
+            const holdingsContainer = document.getElementById('token-holdings');
+            holdingsContainer.innerHTML = portfolioData.holdings.map(holding => {
+                const token = tokens[holding.symbol];
+                const isPositive = holding.change >= 0;
+                return `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 rounded-full ${token.color} mr-2 flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">${token.icon}</span>
+                            </div>
+                            <div>
+                                <div class="text-white text-sm font-medium">${holding.symbol}</div>
+                                <div class="text-emerald-200/70 text-xs">${holding.amount} ${holding.symbol}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-white text-sm font-semibold">$${holding.value.toLocaleString()}</div>
+                            <div class="text-xs ${isPositive ? 'text-emerald-300' : 'text-red-300'}">
+                                ${isPositive ? '+' : ''}${holding.change.toFixed(1)}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Update transactions
+            const transactionsContainer = document.getElementById('recent-transactions');
+            transactionsContainer.innerHTML = portfolioData.transactions.map(tx => {
+                let icon, description;
+                if (tx.type === 'swap') {
+                    icon = '🔄';
+                    description = `Swapped ${tx.amount} to ${tx.to}`;
+                } else if (tx.type === 'receive') {
+                    icon = '📥';
+                    description = `Received ${tx.amount}`;
+                } else {
+                    icon = '📤';
+                    description = `Sent ${tx.amount}`;
+                }
+                
+                return `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <span class="mr-2">${icon}</span>
+                            <div>
+                                <div class="text-white text-xs font-medium">${description}</div>
+                                <div class="text-emerald-200/70 text-xs">${tx.time}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openModal(isFrom) {
+            isSelectingFrom = isFrom;
+            tokenModal.classList.remove('hidden');
+            tokenModal.classList.add('flex');
+        }
+
+        function closeModal() {
+            tokenModal.classList.add('hidden');
+            tokenModal.classList.remove('flex');
+        }
+
+        function openWalletModal() {
+            walletModal.classList.remove('hidden');
+            walletModal.classList.add('flex');
+        }
+
+        function closeWalletModal() {
+            walletModal.classList.add('hidden');
+            walletModal.classList.remove('flex');
+        }
+
+        function attachEventListeners() {
+            fromAmountInput.addEventListener('input', calculateSwap);
+            fromTokenBtn.addEventListener('click', () => openModal(true));
+            toTokenBtn.addEventListener('click', () => openModal(false));
+            swapDirectionBtn.addEventListener('click', swapTokens);
+            swapBtn.addEventListener('click', executeSwap);
+            closeModalBtn.addEventListener('click', closeModal);
+            
+            // Wallet event listeners
+            walletBtn.addEventListener('click', openWalletModal);
+            document.getElementById('disconnect-btn').addEventListener('click', showDisconnectConfirmation);
+            closeWalletModalBtn.addEventListener('click', closeWalletModal);
+            connectMetaMaskBtn.addEventListener('click', connectMetaMask);
+            connectPhantomBtn.addEventListener('click', connectPhantom);
+            connectWalletConnectBtn.addEventListener('click', connectWalletConnect);
+            
+            // Sidebar wallet connection listeners
+            document.getElementById('sidebar-connect-metamask').addEventListener('click', connectMetaMask);
+            document.getElementById('sidebar-connect-phantom').addEventListener('click', connectPhantom);
+            document.getElementById('sidebar-connect-walletconnect').addEventListener('click', connectWalletConnect);
+            document.getElementById('sidebar-connect-coinbase').addEventListener('click', connectCoinbaseWallet);
+            
+            // Chart period buttons
+            document.querySelectorAll('.chart-period-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const period = e.target.getAttribute('data-period');
+                    switchChartPeriod(period);
+                });
+            });
+            
+            // Transaction history event listeners
+            const historyBtn = document.getElementById('history-btn');
+            if (historyBtn) {
+                historyBtn.addEventListener('click', showTransactionHistory);
+            }
+            
+            const closeHistoryBtn = document.getElementById('close-history');
+            if (closeHistoryBtn) {
+                closeHistoryBtn.addEventListener('click', hideTransactionHistory);
+            }
+            
+            const loadMoreBtn = document.getElementById('load-more-transactions');
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', loadMoreTransactions);
+            }
+            
+            // History filter buttons
+            document.querySelectorAll('.history-filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const filter = e.target.getAttribute('data-filter');
+                    filterTransactions(filter);
+                });
+            });
+            
+            // Close modals when clicking outside
+            tokenModal.addEventListener('click', (e) => {
+                if (e.target === tokenModal) {
+                    closeModal();
+                }
+            });
+            
+            walletModal.addEventListener('click', (e) => {
+                if (e.target === walletModal) {
+                    closeWalletModal();
+                }
+            });
+            
+            // Handle window resize for chart
+            window.addEventListener('resize', () => {
+                if (connectedWallet) {
+                    setTimeout(() => {
+                        const canvas = document.getElementById('portfolio-chart');
+                        canvas.width = canvas.offsetWidth;
+                        canvas.height = canvas.offsetHeight;
+                        drawChart();
+                    }, 100);
+                }
+            });
+        }
+
+        // Element SDK implementation
+        async function render(config) {
+            document.getElementById('exchange-title').textContent = config.exchange_title || defaultConfig.exchange_title;
+            document.getElementById('swap-button-text').textContent = config.swap_button_text || defaultConfig.swap_button_text;
+            document.getElementById('footer-text').textContent = config.footer_text || defaultConfig.footer_text;
+            
+            // Apply colors
+            const primaryColor = config.primary_color || defaultConfig.primary_color;
+            const secondaryColor = config.secondary_color || defaultConfig.secondary_color;
+            
+            // Update gradient background
+            document.body.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+            
+            // Update button colors
+            const swapButton = document.getElementById('swap-btn');
+            swapButton.style.background = `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`;
+        }
+
+        function mapToCapabilities(config) {
+            return {
+                recolorables: [
+                    {
+                        get: () => config.primary_color || defaultConfig.primary_color,
+                        set: (value) => {
+                            config.primary_color = value;
+                            window.elementSdk.setConfig({ primary_color: value });
+                        }
+                    },
+                    {
+                        get: () => config.secondary_color || defaultConfig.secondary_color,
+                        set: (value) => {
+                            config.secondary_color = value;
+                            window.elementSdk.setConfig({ secondary_color: value });
+                        }
+                    }
+                ],
+                borderables: [],
+                fontEditable: undefined,
+                fontSizeable: undefined
+            };
+        }
+
+        function mapToEditPanelValues(config) {
+            return new Map([
+                ["exchange_title", config.exchange_title || defaultConfig.exchange_title],
+                ["swap_button_text", config.swap_button_text || defaultConfig.swap_button_text],
+                ["footer_text", config.footer_text || defaultConfig.footer_text]
+            ]);
+        }
+
+        // Initialize Element SDK
+        if (window.elementSdk) {
+            window.elementSdk.init({
+                defaultConfig,
+                render,
+                mapToCapabilities,
+                mapToEditPanelValues
+            });
+        }
+
+        // Start the app
+        init();
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9909975b33b133a4',t:'MTc2MDgwNjgxOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
